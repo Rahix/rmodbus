@@ -4,14 +4,14 @@ use ieee754::Ieee754;
 // TODO variable length when const_generics become stable
 
 #[cfg(feature = "fullcontext")]
-pub const CONTEXT_SIZE: usize = 10_000; // divisible by 8 w/o remainder
+pub const DEFAULT_CONTEXT_SIZE: usize = 10_000; // divisible by 8 w/o remainder
 
 #[cfg(not(feature = "fullcontext"))]
-pub const CONTEXT_SIZE: usize = 1_000;
+pub const DEFAULT_CONTEXT_SIZE: usize = 1_000;
 
 /// Contains standard Modbus register contexts
 #[allow(clippy::module_name_repetitions)]
-pub struct ModbusContext {
+pub struct ModbusContext<const CONTEXT_SIZE: usize = DEFAULT_CONTEXT_SIZE> {
     pub coils: [bool; CONTEXT_SIZE],
     pub discretes: [bool; CONTEXT_SIZE],
     pub inputs: [u16; CONTEXT_SIZE],
@@ -209,14 +209,14 @@ macro_rules! set_u64 {
     };
 }
 
-impl Default for ModbusContext {
+impl<const CONTEXT_SIZE: usize> Default for ModbusContext<CONTEXT_SIZE> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ModbusContext {
+impl<const CONTEXT_SIZE: usize> ModbusContext<CONTEXT_SIZE> {
     #[inline]
     pub fn new() -> Self {
         Self {
@@ -269,13 +269,13 @@ impl ModbusContext {
     ///```
     ///use rmodbus::server::context::*;
     ///
-    ///let mut ctx = ModbusContext::new();
+    ///let mut ctx: ModbusContext = ModbusContext::new();
     ///
     ///for value in ctx.iter() {
     ///    // store value somewhere
     ///}
     #[inline]
-    pub fn iter(&self) -> ModbusContextIterator {
+    pub fn iter(&self) -> ModbusContextIterator<CONTEXT_SIZE> {
         ModbusContextIterator { curr: 0, ctx: self }
     }
 
@@ -285,7 +285,7 @@ impl ModbusContext {
     /// or ModbusContextWriter::new()
     ///
     #[inline]
-    pub fn create_writer(&mut self) -> ModbusContextWriter {
+    pub fn create_writer(&mut self) -> ModbusContextWriter<CONTEXT_SIZE> {
         ModbusContextWriter { curr: 0, ctx: self }
     }
 
@@ -688,13 +688,13 @@ fn set_w_u8(reg_start: u16, higher: bool, value: u8, reg_context: &mut [u16]) {
 /// A tool to write dumped data back to context
 ///
 /// Can write bytes and chunks (&[u8] slices)
-pub struct ModbusContextWriter<'a> {
+pub struct ModbusContextWriter<'a, const CONTEXT_SIZE: usize = DEFAULT_CONTEXT_SIZE> {
     curr: u16,
-    ctx: &'a mut ModbusContext,
+    ctx: &'a mut ModbusContext<CONTEXT_SIZE>,
 }
 
-impl<'a> ModbusContextWriter<'a> {
-    pub fn new(start_offset: u16, ctx: &'a mut ModbusContext) -> Self {
+impl<'a, const CONTEXT_SIZE: usize> ModbusContextWriter<'a, CONTEXT_SIZE> {
+    pub fn new(start_offset: u16, ctx: &'a mut ModbusContext<CONTEXT_SIZE>) -> Self {
         Self {
             curr: start_offset,
             ctx,
@@ -720,12 +720,12 @@ impl<'a> ModbusContextWriter<'a> {
     }
 }
 
-pub struct ModbusContextIterator<'a> {
+pub struct ModbusContextIterator<'a, const CONTEXT_SIZE: usize = DEFAULT_CONTEXT_SIZE> {
     curr: u16,
-    ctx: &'a ModbusContext,
+    ctx: &'a ModbusContext<CONTEXT_SIZE>,
 }
 
-impl<'a> Iterator for ModbusContextIterator<'a> {
+impl<'a, const CONTEXT_SIZE: usize> Iterator for ModbusContextIterator<'a, CONTEXT_SIZE> {
     type Item = u8;
     fn next(&mut self) -> Option<u8> {
         if let Ok(v) = self.ctx.get_cell(self.curr) {

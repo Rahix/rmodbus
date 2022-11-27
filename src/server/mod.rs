@@ -146,7 +146,7 @@ impl<'a, V: VectorTrait<u8>> ModbusFrame<'a, V> {
         }
     }
     /// Process write functions
-    pub fn process_write(&mut self, ctx: &mut context::ModbusContext) -> Result<(), ErrorKind> {
+    pub fn process_write<const S: usize>(&mut self, ctx: &mut context::ModbusContext<S>) -> Result<(), ErrorKind> {
         match self.func {
             MODBUS_SET_COIL => {
                 // func 5
@@ -217,7 +217,7 @@ impl<'a, V: VectorTrait<u8>> ModbusFrame<'a, V> {
         }
     }
     /// Process read functions
-    pub fn process_read(&mut self, ctx: &context::ModbusContext) -> Result<(), ErrorKind> {
+    pub fn process_read<const S: usize>(&mut self, ctx: &context::ModbusContext<S>) -> Result<(), ErrorKind> {
         match self.func {
             MODBUS_GET_COILS | MODBUS_GET_DISCRETES => {
                 // funcs 1 - 2

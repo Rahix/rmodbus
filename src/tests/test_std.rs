@@ -8,8 +8,10 @@ use rand::Rng;
 
 use std::sync::RwLock;
 
+const CONTEXT_SIZE: usize = 8_000;
+
 lazy_static! {
-    pub static ref CTX: RwLock<ModbusContext> = RwLock::new(ModbusContext::new());
+    pub static ref CTX: RwLock<ModbusContext<CONTEXT_SIZE>> = RwLock::new(ModbusContext::new());
 }
 
 #[test]
@@ -957,7 +959,7 @@ fn test_std_frame_fc16() {
 
 #[test]
 fn test_modbus_ascii() {
-    let ctx = ModbusContext::new();
+    let ctx = ModbusContext::<CONTEXT_SIZE>::new();
     let mut result = Vec::new();
     let mut ascii_result = Vec::new();
     let request = [
